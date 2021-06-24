@@ -1,5 +1,5 @@
 # Water Clarity Detection
-This project aims to automatically provide a numerical value to gague water quality using only an image and a ruler. The processing will be done client side through a mobile app, but a web implementation is also planned where an image will be allowed to be uploaded.  
+This project aims to automatically provide a numerical value to gauge water quality using only an image and a ruler. The processing will be done client side through a mobile app, but a web implementation is also planned where an image will be allowed to be uploaded.  
 ### Currently Working On
 - Decluttering Hough Line Transform Output
 ### Working
