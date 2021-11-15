@@ -9,43 +9,52 @@ requirements.txt was used for image segmentation and processing to determine the
 requirementsTraining.txt was used for model training and predictions. Steps 4 & 5
 
 Order To Run:
-1. rename_folder.py    # Formats image names
-2. prepare_data.py     # Allows segmentation of data for training and testing
-3. format_data.py      # Takes segmented image data and outputs to csv
-4. model_training.py   # Takes csv and trains model on section of data
-5. main.py             # The main file to run, takes model folder, input data, returns output accuracy and prediction
+1. rename_folder.py  (Formats image names)
+2. prepare_data.py   (Allows segmentation of data for training and testing)
+3. format_data.py    (Takes segmented image data and outputs to csv)
+4. model_training.py (Takes csv and trains model on section of data)
+5. main.py           (The main file to run, takes model folder, input data, returns output accuracy and prediction)
 
+
+
+### How to run each file
+#### Usage: main.py
+
+`main.py datafile.csv locationToModelFile`
 
 main.py will take the processed collected csv data and run it through the model to produce a "beautified" output
 
-Usage:
-main.py datafile.csv locationToModelFile
+#### Usage: format_data.py
+
+`format_data.py outputname.csv imageFolderPath`
 
 format_data.py will take an output name and the directory of images to parse where it will extract the info to a csv
 
-Usage:
-format_data.py outputname.csv imageFolderPath
+#### Usage: model_treaining.py
+
+`model_training.py inputfile.csv outputFolderPath`
 
 model_training.py will train the model on a given csv
 
-Usage:
-model_training.py inputfile.csv outputFolderPath
+#### Usage: prepare_data.py
+
+`prepare_data.py "foldersToParse" "foldersToParse" etc...`
 
 prepare_data.py will take a folder of images and allow the user to prepare training segmented data
 
-Usage:
-prepare_data.py "foldersToParse" "foldersToParse" etc...
+#### Usage: rename_folder.py
+
+`rename_folder.py "pathToFolder" "actualMeasuredDepth" "dateTimeMeasured"`
 
 rename_folder.py will rename the contents of a folder to work with the rest of the python files.
 
-Usage:
-rename_folder.py "pathToFolder" "actualMeasuredDepth" "dateTimeMeasured"
+#### Note:
 
 test_code.py contains the old methods of object segmentation including Hough Line Transforms and YoloV4 recognition
 
 Non-functional code, but a basis for future expansion (automatic ruler segmentation
+
 ### Currently Working On
-- 
 ### Working
 - Ruler spacing detection
 - Ruler edge detection
