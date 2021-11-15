@@ -54,6 +54,7 @@ test_code.py contains the old methods of object segmentation including Hough Lin
 
 Non-functional code, but a basis for future expansion (automatic ruler segmentation
 
+## Task List
 ### Currently Working On
 ### Working
 - Ruler spacing detection
@@ -63,7 +64,7 @@ Non-functional code, but a basis for future expansion (automatic ruler segmentat
 - Blur scoring detection
 - Model Training Algorithm
 - Processed images
-### Not Working
+### To Do
 - Automatically determining areas of interest
 - Clean edge detection
 - Mobile/Web implementation
