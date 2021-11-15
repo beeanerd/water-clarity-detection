@@ -2,6 +2,8 @@
 This project aims to automatically provide a numerical value to gauge water quality using only an image and a ruler. The processing will be done client side through a mobile app, but a web implementation is also planned where an image will be allowed to be uploaded.  
 ## Instructions for use
 
+[Video Presentation](https://www.youtube.com/watch?v=RePFx4T6Fw0&t=8s)
+
 Two virtual environments were used.
 
 requirements.txt was used for image segmentation and processing to determine the blur values. Steps 1, 2, & 3
