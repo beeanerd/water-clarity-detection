@@ -1,130 +1,115 @@
+import tensorflow as tf
+import csv
+import os
 import sys
-import math
-import cv2 as cv
 import numpy as np
-from imutils import paths
-from matplotlib import pyplot as plt
-import argparse
+import random
+
+ALLOWED_VARIANCE = 9
+IDEAL_VARIANCE = 2
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+def test_model(valI, model, result):
+    temp = list(zip(model.predict(valI), result))
+    to_return = list()
+    for i in temp:
+        predicted = i[0][0]
+        actual = i[1][0]
+        to_return.append((predicted, actual))
+    return to_return
 
 
-def blur_scoring(image):
-    return cv.Laplacian(image, cv.CV_64F).var()
+def process_data(filename):
+    xtrain = []
+    ytrain = []
+    with open(filename, newline='') as csvfile:
+        spamreader = csv.reader(csvfile, delimiter=',', quotechar='"')
+        for row in spamreader:
+            ydata = [float(row[1])]
+            xdata = [float(row[2]), float(row[3])]
+            xtrain.append(np.array(xdata))
+            ytrain.append(np.array(ydata))
+
+    train = list(zip(xtrain, ytrain))
+    random.shuffle(train)
+    x = [x for x, y in train]
+    y = [y for x, y in train]
+
+    xtrain = np.array(x[:len(x)//2])
+    ytrain = np.array(y[:len(y)//2])
+
+    xval = np.array(x[len(x)//2:])
+    yval = np.array(y[len(y)//2:])
+
+    x = np.array(x)
+    y = np.array(y)
+
+    return(xtrain, ytrain, xval, yval, x, y)  # Training Input, Training Output, Validation Input, Validation Output, Full Input, Full Output
 
 
-def otsu_binarization(images):
-    linked_values = list()
-    for count, imagePath in enumerate(images):
-        img = cv.imread(imagePath, 0)
-        blur = cv.GaussianBlur(img, (5, 5), 0)
 
-        # find normalized_histogram, and its cumulative distribution function
-        hist = cv.calcHist([blur], [0], None, [256], [0, 256])
-        hist_norm = hist.ravel() / hist.max()
-        Q = hist_norm.cumsum()
-
-        bins = np.arange(256)
-
-        fn_min = np.inf
-        thresh = -1
-
-        for i in range(1, 256):
-            p1, p2 = np.hsplit(hist_norm, [i])  # probabilities
-            q1, q2 = Q[i], Q[255] - Q[i]  # cum sum of classes
-            b1, b2 = np.hsplit(bins, [i])  # weights
-
-            # finding means and variances
-            m1, m2 = np.sum(p1 * b1) / q1, np.sum(p2 * b2) / q2
-            v1, v2 = np.sum(((b1 - m1) ** 2) * p1) / q1, np.sum(((b2 - m2) ** 2) * p2) / q2
-
-            # calculates the minimization function
-            fn = v1 * q1 + v2 * q2
-            if fn < fn_min:
-                fn_min = fn
-                thresh = i
-
-        # find otsu's threshold value with OpenCV function
-        ret, otsu = cv.threshold(blur, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
-        linked_values.append((thresh, ret))
-    return linked_values
+def test_model_single(inputa, inputb, model):
+    print("\n" * 20)
+    print(f"{bcolors.BOLD}Predicted Value for above water of {inputa} and below water of {inputb} is:\n{bcolors.OKGREEN}{model.predict(np.array([[float(inputa), float(inputb)]]))[0][0]} inches{bcolors.ENDC} of visibility")
 
 
-def save_image(image_list):                     # image_list = (name/path, img file)
-    good_saves = 0
-    bad_saves = 0
-    for image_tuples in image_list:
-        for name, image in image_tuples:
-            check = cv.imwrite(name, image)
-            if check:
-                good_saves += 1
-            else:
-                print(f"{name} failed to save")
-                bad_saves += 1
-    print(f"Proper saves: {good_saves}\nFailed saved: {bad_saves}")
+def beautify_output(values):  # (Predicted Value, Actual Value)
+    fail_count = 0
+    success_count = 0
+    twenty_five_bound = int(ALLOWED_VARIANCE * .25)
+    within_twenty_five = 0
+    fifty_bound = int(ALLOWED_VARIANCE * .5)
+    within_fifty = 0
+    seventy_five_bound = int(ALLOWED_VARIANCE * .75)
+    within_seventy_five = 0
+    total_num = len(values)
+    for i in values:
+        predicted = i[0]
+        actual = i[1]
+        difference = abs(predicted-actual)
+        if difference < seventy_five_bound:
+            within_seventy_five += 1
+            if difference < fifty_bound:
+                within_fifty += 1
+                if difference < twenty_five_bound:
+                    within_twenty_five += 1
+        check = check_difference(difference)
+        if check[1] < 0: 
+            fail_count += 1
+        if check[1] > 0:
+            success_count += 1
+        print(f"{bcolors.BOLD}{predicted}\t\t{actual}\t\t{check[0]}{difference}{bcolors.ENDC}")
+    print("---"*50)
+    print(f"Within 25%: {bcolors.BOLD}{bcolors.OKGREEN}{within_twenty_five} {within_twenty_five*100/total_num}% {bcolors.ENDC}Within 50%: {bcolors.BOLD}{bcolors.OKCYAN}{within_fifty} {within_fifty*100/total_num}% {bcolors.ENDC}Within 75%: {bcolors.BOLD}{bcolors.OKBLUE}{within_seventy_five} {within_seventy_five*100/total_num}%{bcolors.ENDC}")
+    print(f"{bcolors.BOLD}Fails: {bcolors.FAIL}{fail_count}{bcolors.ENDC} {bcolors.BOLD}Successes:{bcolors.OKGREEN} {success_count}{bcolors.ENDC} {bcolors.BOLD}Fail to Success: {bcolors.OKCYAN}{fail_count/success_count}{bcolors.ENDC} Success to Total: {bcolors.OKCYAN}{success_count/total_num}{bcolors.ENDC}")
 
 
-def hough_line_drawing(images):
-    image_files_to_save = list()
-    for count, imgPath in enumerate(images):
-        image = cv.imread(imgPath)
-        image2 = np.copy(image)
-        print(imgPath)
-        # gray = cv.imread(cv.samples.findFile(imgPath), cv.IMREAD_GRAYSCALE)
-        gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-        print("gray")
-        blur = cv.medianBlur(gray, 5)
-        print("blur")
-        adapt_type = cv.ADAPTIVE_THRESH_GAUSSIAN_C
-        thresh_type = cv.THRESH_BINARY_INV
-        threshold = cv.adaptiveThreshold(blur, 255, adapt_type, thresh_type, 41, 20)
-        # threshold, image_result = cv.threshold(blur, 255, 0, cv.THRESH_BINARY + cv.THRESH_OTSU)
-        sharpen_kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
-        fm = cv.filter2D(threshold, -1, sharpen_kernel)
-        print("adaptiveThreshold")
-        # fm = variance_of_laplacian(gray)                                        ### Used to calculate the blurriness
-        # fm = cv.Canny(image, 50, 200)                                           ### Canny looks promising but it restricts too much, maybe play with thresh?
-        rho, theta, thresh = 2, np.pi / 180, 400
-        lines = cv.HoughLines(fm, rho, theta, thresh)
-        if lines is not None:
-            for i in range(0, len(lines)):
-                rho = lines[i][0][0]
-                theta = lines[i][0][1]
-                a = math.cos(theta)
-                b = math.sin(theta)
-                x0 = a * rho
-                y0 = b * rho
-                pt1 = (int(x0 + 1000 * (-b)), int(y0 + 1000 * (a)))
-                pt2 = (int(x0 - 1000 * (-b)), int(y0 - 1000 * (a)))
-                cv.line(image2, pt1, pt2, (0, 0, 255), 3, cv.LINE_AA)
-        rho, theta, thresh = 2, np.pi / 180, 400
-        lines_p = cv.HoughLinesP(fm, 1, np.pi / 180, 50, None, 50, 10)
-        if lines_p is not None:
-            for i in range(0, len(lines_p)):
-                l = lines_p[i][0]
-                cv.line(image, (l[0], l[1]), (l[2], l[3]), (0, 0, 255), 3, cv.LINE_AA)
-        name = (f"Probability Hough Line - Standard Preprocessing - {imgPath}", image)
-        name2 = (f"Hough Line - Standard Preprocessing - {imgPath}", image2)
-        name3 = (f"B&W Image - Standard Preprocessing - {imgPath}", fm)
-        image_files_to_save.append((name, name2, name3))
-        cv.imshow("Probability Hough Line Standard Preprocessing", image)
-        cv.putText(fm, f"{fm}", (10, 30), cv.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 3)
-        cv.imshow("Hough Line with Standard Preprocessing", image2)
-        cv.imshow("B&W Image", fm)
-        key = cv.waitKey(0)
-    return image_files_to_save
+def check_difference(value):
+    if abs(value) > ALLOWED_VARIANCE:
+        return (bcolors.FAIL, -1)
+    if abs(value) < IDEAL_VARIANCE:
+        return (bcolors.OKGREEN, 1)
+    return ("", 0)
 
 
-def main():
-    # This is going to process the image and set it to output purely the edges, plan is to run hough line detection on this
-    # Which will maybe fix the issue with to many lines being represented
-
-    ap = argparse.ArgumentParser()
-    ap.add_argument("-i", "--images", required=True, help="path to input directory of images")
-    args = vars(ap.parse_args())
-    images = paths.list_images(args["images"])
-    # thresh_vals = otsu_binarization(images)
-    to_save = hough_line_drawing(images)
-    save_image(to_save)
+def main(datafile, savefile):
+    vals = process_data(datafile)
+    model = tf.keras.models.load_model(savefile)
+    beautify_output(test_model(vals[2], model, vals[3]))
 
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) == 3:
+        main(sys.argv[1], sys.argv[2])  # Datafile Modelfile
+    else:
+        test_model_single(sys.argv[1], sys.argv[2], tf.keras.models.load_model(sys.argv[3]))  # ValA ValB ModelFile
