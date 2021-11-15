@@ -3,7 +3,7 @@ This project aims to automatically provide a numerical value to gauge water qual
 ## Instructions for use
 
 ### Currently Working On
-- Decluttering Hough Line Transform Output
+- 
 ### Working
 - Ruler spacing detection
 - Ruler edge detection
