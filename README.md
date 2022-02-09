@@ -54,7 +54,7 @@ rename_folder.py will rename the contents of a folder to work with the rest of t
 
 test_code.py contains the old methods of object segmentation including Hough Line Transforms and YoloV4 recognition
 
-Non-functional code, but a basis for future expansion (automatic ruler segmentation
+Non-functional code, but a basis for future expansion (automatic ruler segmentation)
 
 ## Task List
 ### Currently Working On
